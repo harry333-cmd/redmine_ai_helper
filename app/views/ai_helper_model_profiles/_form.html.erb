@@ -8,11 +8,15 @@
       access_key = ""
       access_key = AiHelperModelProfilesController::DUMMY_ACCESS_KEY unless @model_profile.new_record?
   %>
-  <p id="ai-helper-mode-access-key"><%= f.password_field :access_key, value: access_key, size: 60, required: true %></p>
+  <p id="ai-helper-mode-access-key"><%= f.password_field :access_key, value: access_key, size: 60, required: true %>
+  </p>
+  <p id="ai-helper-mode-auth-type">
+    <%= f.select :auth_type, AiHelperModelProfile.auth_type_options_for_select, include_blank: false %>
+  </p>
   <p id="ai-helper-model-llm-model">
     <%= f.text_field :llm_model, size: 60, required: true %>
   </p>
-  <p id="ai-helper-model-llm-model">
+  <p id="ai-helper-model-llm-temperature">
     <%= f.text_field :temperature, size: 60, required: true %>
   </p>
   <p id="ai-helper-model-max-tokens">
@@ -46,6 +50,7 @@
       const baseUriElement = document.getElementById('ai-helper-model-base-uri');
       const accessKeyRequiredElement = document.querySelector('#ai-helper-mode-access-key .required');
       const organizationIdElement = document.getElementById('ai-helper-model-organization-id');
+      const authTypeElement = document.getElementById('ai-helper-mode-auth-type');
 
       if (isBaseUriRequired(selectedValue) == true) {
         if (baseUriElement) baseUriElement.style.display = 'block';
@@ -55,8 +60,10 @@
 
       if (selectedValue == '<%= RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE %>') {
         if (accessKeyRequiredElement) accessKeyRequiredElement.style.display = 'none';
+        authTypeElement.style.display = 'block';
       } else {
         if (accessKeyRequiredElement) accessKeyRequiredElement.style.display = 'block';
+        authTypeElement.style.display = 'none';
       }
 
       if (selectedValue == '<%= RedmineAiHelper::LlmProvider::LLM_OPENAI %>') {

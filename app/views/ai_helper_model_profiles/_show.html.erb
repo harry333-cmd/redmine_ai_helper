@@ -13,10 +13,12 @@
   <%= label_tag AiHelperModelProfile.human_attribute_name(:access_key) %>
   <%= @model_profile.masked_access_key %>
 </p>
+<% if @model_profile.auth_type_required? %>
 <p>
   <%= label_tag AiHelperModelProfile.human_attribute_name(:auth_type) %>
-  <%= @model_profile.auth_type %>
+  <%= @model_profile.auth_type_string %>
 </p>
+<% end %>
 <p>
   <%= label_tag AiHelperModelProfile.human_attribute_name(:llm_model) %>
   <%= @model_profile.llm_model %>

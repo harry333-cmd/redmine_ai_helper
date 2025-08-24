@@ -51,4 +51,26 @@ class AiHelperModelProfile < ApplicationRecord
     return AUTH_TYPE_BEARER if read_attribute(:auth_type).nil?
     read_attribute(:auth_type)
   end
+
+  def auth_type_string
+    case auth_type
+    when AUTH_TYPE_BEARER
+      return "Bearer"
+    when AUTH_TYPE_API_KEY
+      return "API-Key"
+    else
+      return "Unknown"
+    end
+  end
+
+  def auth_type_required?
+    llm_type == RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE
+  end
+
+  def self.auth_type_options_for_select
+    [
+      ["Bearer", AUTH_TYPE_BEARER],
+      ["API-Key", AUTH_TYPE_API_KEY],
+    ]
+  end
 end
