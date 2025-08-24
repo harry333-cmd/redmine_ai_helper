@@ -10,7 +10,10 @@ class AiHelperModelProfile < ApplicationRecord
   validates :base_uri, format: { with: URI::regexp(%w[http https]), message: l("ai_helper.model_profiles.messages.must_be_valid_url") }, if: :base_uri_required?
   validates :temperature, presence: true, numericality: { greater_than_or_equal_to: 0.0 }
 
-  safe_attributes "name", "llm_type", "access_key", "organization_id", "base_uri", "version", "llm_model", "temperature", "max_tokens"
+  safe_attributes "name", "llm_type", "access_key", "organization_id", "base_uri", "version", "llm_model", "temperature", "max_tokens", "auth_type"
+
+  AUTH_TYPE_BEARER = 0
+  AUTH_TYPE_API_KEY = 1
 
   # Replace all characters after the 4th with *
   def masked_access_key
@@ -42,5 +45,10 @@ class AiHelperModelProfile < ApplicationRecord
     names = RedmineAiHelper::LlmProvider.option_for_select
     name = names.find { |n| n[1] == llm_type }
     name ? name[0] : ""
+  end
+
+  def auth_type
+    return AUTH_TYPE_BEARER if read_attribute(:auth_type).nil?
+    read_attribute(:auth_type)
   end
 end
