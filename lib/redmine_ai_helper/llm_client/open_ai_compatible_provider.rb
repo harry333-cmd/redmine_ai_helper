@@ -8,30 +8,53 @@ module RedmineAiHelper
       # Generate a client for OpenAI-compatible LLMs.
       # @return [OpenAiCompatible] The OpenAI-compatible client.
       def generate_client
-        setting = AiHelperSetting.find_or_create
-        model_profile = setting.model_profile
-        raise "Model Profile not found" unless model_profile
-        raise "Base URI not found" unless model_profile.base_uri
-        llm_options = {
-          uri_base: model_profile.base_uri,
-        }
-        llm_options[:organization_id] = model_profile.organization_id if model_profile.organization_id
-        llm_options[:embedding_model] = setting.embedding_model unless setting.embedding_model.blank?
-        default_options = {
-          chat_model: model_profile.llm_model,
-          temperature: model_profile.temperature,
-        }
-        default_options[:embedding_model] = setting.embedding_model unless setting.embedding_model.blank?
-        default_options[:dimensions] = setting.dimension if setting.dimension
-        default_options[:max_tokens] = setting.max_tokens if setting.max_tokens
-        client = OpenAiCompatible.new(
-          api_key: model_profile.access_key,
-          llm_options: llm_options,
-          default_options: default_options,
-        )
-        raise "OpenAI LLM Create Erro" unless client
-        client
-      end
+  setting = AiHelperSetting.find_or_create
+  model_profile = setting.model_profile
+  raise "Model Profile not found" unless model_profile
+  raise "Base URI not found" unless model_profile.base_uri
+  llm_options = {
+    uri_base: model_profile.base_uri,
+  }
+  llm_options[:organization_id] = model_profile.organization_id if model_profile.organization_id
+  llm_options[:embedding_model] = setting.embedding_model unless setting.embedding_model.blank?
+  
+  # Configure HTTP headers based on auth_type only if access_key is present
+  if model_profile.access_key.present? && model_profile.auth_type == AiHelperModelProfile::AUTH_TYPE_API_KEY
+    llm_options[:faraday_connection_block] = proc do |faraday|
+      faraday.headers["API-Key"] = model_profile.access_key
+      faraday.headers.delete("Authorization") # Remove default Authorization header
+    end
+  end
+  
+  default_options = {
+    chat_model: model_profile.llm_model,
+    temperature: model_profile.temperature,
+  }
+  default_options[:embedding_model] = setting.embedding_model unless setting.embedding_model.blank?
+  default_options[:dimensions] = setting.dimension if setting.dimension
+  default_options[:max_tokens] = setting.max_tokens if setting.max_tokens
+  
+  # Set api_key based on auth_type and access_key presence
+  api_key = if model_profile.access_key.present? && model_profile.auth_type == AiHelperModelProfile::AUTH_TYPE_API_KEY
+    # For API-Key auth, we still need to provide a dummy api_key to avoid validation errors
+    # The actual API key is set in the HTTP header via faraday_connection_block
+    "dummy_key"
+  elsif model_profile.access_key.present?
+    # For Bearer auth (default), use the access_key as the API key
+    model_profile.access_key
+  else
+    # No access_key provided, use empty string
+    ""
+  end
+  
+  client = OpenAiCompatible.new(
+    api_key: api_key,
+    llm_options: llm_options,
+    default_options: default_options,
+  )
+  raise "OpenAI LLM Create Erro" unless client
+  client
+end
 
       # Many LLMs with OpenAI API-compatible APIs do not implement tool calls,
       # so we implement compatibility features ourselves.
